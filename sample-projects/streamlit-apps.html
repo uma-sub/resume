@@ -93,6 +93,35 @@
       font-size: 0.8rem;
       color: #777;
     }
+    .img-modal {
+  display: none;          /* hidden by default */
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.8);
+  justify-content: center;
+  align-items: center;
+}
+
+.img-modal-content {
+  max-width: 90%;
+  max-height: 90%;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  border-radius: 4px;
+}
+
+.img-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  color: #fff;
+  font-size: 32px;
+  cursor: pointer;
+}
+
   </style>
 </head>
 <body>
@@ -115,27 +144,32 @@
       <h2 class="section-title">Screenshots</h2>
       <div class="screenshots-grid">
         <figure class="screenshot-card">
-          <img src="reddit-scanner-1.png" alt="Reddit Screenshot 1">
+          <img src="reddit-scanner-1.png" alt="Reddit Screenshot 1" onclick="openModal(this)">
           <figcaption class="screenshot-caption">
             Reddit Scanner with results from two sub reddits.
           </figcaption>
         </figure>
 
         <figure class="screenshot-card">
-          <img src="reddit-scanner-2.png" alt="Reddit Screenshot 2">
+          <img src="reddit-scanner-2.png" alt="Reddit Screenshot 2" onclick="openModal(this)">
           <figcaption class="screenshot-caption">
             Reddit Scanner showing results summary.
           </figcaption>
         </figure>
 
         <figure class="screenshot-card">
-          <img src="reddit-scanner-3.png" alt="Reddit Screenshot 3">
+          <img src="reddit-scanner-3.png" alt="Reddit Screenshot 3" onclick="openModal(this)">
           <figcaption class="screenshot-caption">
             Reddit Scanner showing a different sub reddit with results.
           </figcaption>
         </figure>
       </div>
     </section>
+    <!-- Modal for full-size image -->
+    <div id="imgModal" class="img-modal" onclick="closeModal(event)">
+    <span class="img-modal-close">&times;</span>
+    <img class="img-modal-content" id="imgModalFull">
+    </div>
 
     <!-- Code link -->
     <section>
@@ -149,6 +183,25 @@
       @Uma Subramanian 2025
     </footer>
   </main>
+  <script>
+  function openModal(imgElement) {
+    const modal = document.getElementById('imgModal');
+    const modalImg = document.getElementById('imgModalFull');
+    modalImg.src = imgElement.src;
+    modal.style.display = 'flex';
+  }
+
+  function closeModal(event) {
+    const modal = document.getElementById('imgModal');
+    const closeBtn = document.querySelector('.img-modal-close');
+
+    // Close if clicked on background or close button
+    if (event.target === modal || event.target === closeBtn) {
+      modal.style.display = 'none';
+    }
+  }
+</script>
+
 </body>
 </html>
 
