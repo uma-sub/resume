@@ -1,0 +1,142 @@
+from tensorflow.keras import layers, models, regularizers  # Add the regularizers import
+from tensorflow.keras.optimizers import Adam  # Import the Adam optimizer
+
+# Define and compile your model
+base_model = VGG16(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
+# Unfreeze some layers of VGG16 for fine-tuning
+for layer in base_model.layers[-4:]:  # Unfreeze last 4 layers
+    layer.trainable = True
+
+# Add custom layers
+x = layers.GlobalAveragePooling2D()(base_model.output)
+x = layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.01))(x)
+x = layers.BatchNormalization()(x)
+x = layers.Dropout(0.5)(x)
+predictions = layers.Dense(1, activation='sigmoid')(x)
+
+model = Model(inputs=base_model.input, outputs=predictions)
+
+for layer in base_model.layers:
+    layer.trainable = False
+
+# Compile the model
+model.compile(optimizer=Adam(learning_rate=1e-5),  # Smaller learning rate for fine-tuning
+              loss='binary_crossentropy',
+              metrics=['accuracy', 'AUC'])
+
+# Callbacks
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.0001)
+
+# Train the model
+steps_per_epoch = len(X_train_res) // batch_size
+history = model.fit(
+    train_gen_balanced,
+    validation_data=val_generator,
+    steps_per_epoch=steps_per_epoch,
+    epochs=100,
+    callbacks=[early_stopping, reduce_lr]
+)
+
+results = model.evaluate(test_generator)
+test_loss = results[0]
+test_accuracy = results[1]  # Assuming accuracy is the first metric
+test_auc = results[2]  # Assuming AUC is the second metric
+
+print(f'Test accuracy: {test_accuracy * 100:.2f}%')
+print(f'Test AUC: {test_auc:.2f}')
+
+# Generate predictions and calculate ROC curve
+y_pred_prob = model.predict(test_generator)  # Get predicted probabilities
+y_pred = np.where(y_pred_prob > 0.5, 1, 0).flatten()
+y_true = test_generator.classes  # Assuming test_generator has the true labels
+
+# Calculate ROC curve and AUC
+fpr, tpr, _ = roc_curve(y_true, y_pred_prob)
+roc_auc = auc(fpr, tpr)
+
+# Plot ROC curve
+plt.figure()
+plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc='lower right')
+plt.show()
+
+# Predict probabilities on the test set
+#y_pred_prob = model.predict(test_generator)
+#y_pred = np.where(y_pred_prob > 0.5, 1, 0).flatten()
+#y_true = test_generator.classes
+
+# Classification report
+print(classification_report(y_true, y_pred))
+
+import pandas as pd
+from sklearn.metrics import confusion_matrix
+# Confusion matrix
+
+print("Unique labels in y_true:", np.unique(y_true))
+print("Unique labels in y_pred:", np.unique(y_pred))
+conf_matrix = confusion_matrix(y_true, y_pred)
+# Print the DataFrame
+print(conf_matrix)
+
+import matplotlib.pyplot as plt
+
+# Assuming you have already trained your model and stored the history
+# model = ...
+# history = model.fit(...)
+
+# Extract the history data from the history object
+history_dict = history.history
+
+# Plotting the Loss
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(history_dict['loss'], label='Training Loss')
+plt.plot(history_dict['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+
+# Plotting the Accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history_dict['accuracy'], label='Training Accuracy')
+plt.plot(history_dict['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+
+plt.show()
+
+
+# ROC Curve and AUC
+fpr, tpr, _ = roc_curve(y_true, y_pred_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.figure()
+plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc='lower right')
+plt.show()
+
+#summary
+model.summary()
+
+
+
+
+# Save the model
+model.save('/content/drive/My Drive/SkinCancerDetection/cnn_model.h5')
